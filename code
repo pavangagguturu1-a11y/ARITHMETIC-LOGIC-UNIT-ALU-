@@ -1,0 +1,82 @@
+#code
+
+  // 4-Bit ALU Design
+module ALU_4bit (
+    input  [3:0] A_in,      // First Operand
+    input  [3:0] B_in,      // Second Operand
+    input  [2:0] Op_code,   // Operation Selection
+    output reg [3:0] ALU_out,
+    output reg Carry_out,   // Carry flag for arithmetic
+    output Zero_flag        // High if result is zero
+);
+
+    always @(*) begin
+        // Reset Carry to 0 by default to prevent latches
+        Carry_out = 1'b0;
+        
+        case (Op_code)
+            3'b000: {Carry_out, ALU_out} = A_in + B_in; // ADD
+            3'b001: {Carry_out, ALU_out} = A_in - B_in; // SUB
+            3'b010: ALU_out = A_in & B_in;             // AND
+            3'b011: ALU_out = A_in | B_in;             // OR
+            3'b100: ALU_out = ~A_in;                  // NOT
+            default: ALU_out = 4'b0000;                // NOP
+        endcase
+    end
+
+    // Combinational logic for Zero Flag
+    assign Zero_flag = (ALU_out == 4'b0000);
+
+endmodule
+  
+  //verilog test bench
+  module ALU_tb;
+
+    // Signal declarations
+    reg [3:0] A_in, B_in;
+    reg [2:0] Op_code;
+    wire [3:0] ALU_out;
+    wire Carry_out, Zero_flag;
+
+    // Instantiate the Unit Under Test (UUT)
+    ALU_4bit uut (
+        .A_in(A_in),
+        .B_in(B_in),
+        .Op_code(Op_code),
+        .ALU_out(ALU_out),
+        .Carry_out(Carry_out),
+        .Zero_flag(Zero_flag)
+    );
+
+    initial begin
+        // Required for EDA Playground Waveforms
+        $dumpfile("dump.vcd");
+        $dumpvars(1, ALU_tb);
+
+        // Header for Console Output
+        $display("Time | Op | A | B | Result | C | Z");
+        $display("------------------------------------");
+        $monitor("%4t | %b | %h | %h |   %h    | %b | %b", 
+                 $time, Op_code, A_in, B_in, ALU_out, Carry_out, Zero_flag);
+
+        // --- Test Scenarios ---
+        
+        // Addition (5 + 3 = 8)
+        A_in = 4'h5; B_in = 4'h3; Op_code = 3'b000; #10;
+        
+        // Addition with Carry (F + 1 = 0, Carry = 1)
+        A_in = 4'hF; B_in = 4'h1; Op_code = 3'b000; #10;
+        
+        // Subtraction (A - 4 = 6)
+        A_in = 4'hA; B_in = 4'h4; Op_code = 3'b001; #10;
+        
+        // Logical AND (C & A = 8)
+        A_in = 4'hC; B_in = 4'hA; Op_code = 3'b010; #10;
+        
+        // Logical NOT of A
+        A_in = 4'h3; B_in = 4'h0; Op_code = 3'b100; #10;
+
+        $finish;
+    end
+
+endmodule
